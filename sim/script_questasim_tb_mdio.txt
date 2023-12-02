@@ -1,0 +1,21 @@
+if ![info exists QUARTUS_INSTALL_DIR] {
+  set QUARTUS_INSTALL_DIR "E:/quartus16/quartus"
+}
+
+if ![info exists PRJ_DIR] {
+  set PRJ_DIR "c:/Users/hudyakovas/Desktop/Khudyakov/MyProjects/Ethernet"
+}
+
+global QUARTUS_INSTALL_DIR
+global PRJ_DIR
+
+cd "$PRJ_DIR/sim"
+vlib work
+vmap work work
+
+vlog ../tb/mdio_test/tb_mdio_top.v
+vlog ../tb/mdio_test/tb_mdio_data_controller.v
+vlog ../tb/mdio_test/tb_mdio.v
+vlog ../tb/mdio_test/tb_emulator_mdio.v
+
+vsim -voptargs=+acc work.tb_mdio_top
