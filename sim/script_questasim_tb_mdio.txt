@@ -1,11 +1,11 @@
 if ![info exists QUARTUS_INSTALL_DIR] {
-  set QUARTUS_INSTALL_DIR "E:/quartus16/quartus"
+  set QUARTUS_INSTALL_DIR "c:/intelFPGA_lite/22.1std/quartus/"
 }
 
 if ![info exists PRJ_DIR] {
-  set PRJ_DIR "c:/Users/hudyakovas/Desktop/Khudyakov/MyProjects/Ethernet"
+  set PRJ_DIR "d:/programming/Ethernet"
 }
-
+ 
 global QUARTUS_INSTALL_DIR
 global PRJ_DIR
 
@@ -14,8 +14,8 @@ vlib work
 vmap work work
 
 vlog ../tb/mdio_test/tb_mdio_top.v
-vlog ../tb/mdio_test/tb_mdio_data_controller.v
 vlog ../tb/mdio_test/tb_mdio.v
-vlog ../tb/mdio_test/tb_emulator_mdio.v
 
 vsim -voptargs=+acc work.tb_mdio_top
+
+vlog ../tb/mdio_test/tb_emulator_mdio.v
