@@ -51,11 +51,15 @@ module tb_mdio(
 				set_rdy <= 0;
 				z 		<= 0;
 				o_rdy 	<= 1;
+				if (i_cmd[3]) 
+					o_data_written_flag <= 1;
+				else 
+					o_data_read_flag <= 1;
 			end
 				else o_rdy <= 0;
 			if (i_new_cmd && state != 1)
 				state <= 1'b1;
-			if (~state) begin
+			if (o_rdy) begin
 				o_data_written_flag <= 0;
 				o_data_read_flag 	<= 0;
 				o_r_register_data 	<= 0;
@@ -84,10 +88,6 @@ module tb_mdio(
 	always @(posedge i_clk, posedge i_reset) begin /* TRANSMISSION END CONDITION (SET OUTPUT) */
 		if (~i_reset && state) begin
 			if (cmd_counter == 5'b11111 /* 31 */) begin
-				if (i_cmd[3]) 
-					o_data_written_flag <= 1;
-				else 
-					o_data_read_flag <= 1;
 				state 	<= 0;
 				set_rdy <= 1;
 			end

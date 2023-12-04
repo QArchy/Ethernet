@@ -167,7 +167,7 @@ module tb_mdio_top(
 				register_address <= register_address + 1;
 				new_cmd <= 1;
 				register_32_counter <= register_32_counter + 1;
-				same <= (r_register_data == data[register_32_counter]) ? 1: 0;
+				same <= (r_register_data == data[register_32_counter - 1]) ? 1: 0;
 				if (register_32_counter == 5'b11111) begin
 					state 				<= IDLE;
 					register_32_counter <= 0;
