@@ -62,7 +62,7 @@ module tb_mdio(
 			if (o_rdy) begin
 				o_data_written_flag <= 0;
 				o_data_read_flag 	<= 0;
-				o_r_register_data 	<= 0;
+				//o_r_register_data <= 0;
 			end
 		end
 	end
@@ -73,8 +73,8 @@ module tb_mdio(
 				0: begin /* READ */
 					z <= (cmd_counter >= 5'b01101 /* 13 */) ? 0: 1;
 					if (cmd_counter >= 5'b10000 /* 16 */) begin
-						o_r_register_data[14:0] <= o_r_register_data[15:1];
-						o_r_register_data[15] 	<= mdio_in;
+						o_r_register_data[15:1] <= o_r_register_data[14:0];
+						o_r_register_data[0] 	<= mdio_in;
 					end
 				end
 				1: begin /* WRITE */

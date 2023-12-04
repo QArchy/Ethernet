@@ -83,13 +83,16 @@ module tb_mdio_top(
 	reg reset;
 	initial reset <= 0;
 	
+	reg stop;
+	initial stop <= 0;
+	
 	reg same;
 	initial same <= 0;
 	
 		// -------------- STATE MACHINE -------------- //
 	parameter WRITE = 2'b00; 
-	parameter IDLE 	= 2'b01;
-	parameter READ	= 2'b10;
+	parameter READ	= 2'b01;
+	parameter IDLE	= 2'b10;
 	
 	reg [4:0] register_32_counter;
 	initial register_32_counter <= 0;
@@ -146,6 +149,10 @@ module tb_mdio_top(
 	always @(posedge clk, posedge reset) begin /* WRITE */
 		if (~reset && state == WRITE) begin
 			if (rdy) begin
+				if (register_32_counter == 5'b00000) begin
+					$display("[Simulation Time: %0t]\t ##### Simulation start #####", $time);
+					$display("[Simulation Time: %0t]\t ##### WRITE #####", $time);
+				end
 				cmd <= {data[register_32_counter], 1'b0, 1'b1, register_address[4:0], {5{1'b0}}, 1'b1, 1'b0, 1'b1, 1'b0};
 				register_address <= register_address + 1;
 				new_cmd <= 1;
@@ -157,35 +164,58 @@ module tb_mdio_top(
 				end
 			end
 				else new_cmd <= 0;
+			if (new_cmd) begin
+				$display("[Simulation Time: %0t]\tCommand %b is being written to mdio", $time, cmd);
+				$display("[Simulation Time: %0t]\tRegister data = %h", $time, cmd[31:16]);
+			end
 		end	
 	end
 	
 	always @(posedge clk, posedge reset) begin /* READ */
 		if (~reset && state == READ) begin
 			if (rdy) begin
+				if (register_32_counter == 5'b00000) begin
+					$display("[Simulation Time: %0t]\t ##### READ #####", $time);
+				end
 				cmd <= {data[register_32_counter], 1'b0, 1'b1, register_address[4:0], {5{1'b0}}, 1'b0, 1'b1, 1'b1, 1'b0};
 				register_address <= register_address + 1;
 				new_cmd <= 1;
 				register_32_counter <= register_32_counter + 1;
 				same <= (r_register_data == data[register_32_counter - 1]) ? 1: 0;
 				if (register_32_counter == 5'b11111) begin
-					state 				<= IDLE;
+					state <= IDLE;
 					register_32_counter <= 0;
 					register_address 	<= 0;
 				end
+				
 			end
 				else new_cmd <= 0;
+			if (new_cmd) begin
+				$display("[Simulation Time: %0t]\tCommand %b is being written to mdio", $time, cmd);
+				$display("[Simulation Time: %0t]\tRegister data %h is read from mdio", $time, r_register_data);
+				$display("[Simulation Time: %0t]\tRegister data is read written and read correctly: %b", $time, same);
+			end
 		end	
 	end
 	
 	always @(posedge clk, posedge reset) begin /* IDLE */
 		if (~reset && state == IDLE) begin
-			rw 					<= 0;
-			register_address 	<= 0;
-			register_32_counter <= 0;
-			new_cmd			 	<= 0;
-			cmd			 		<= 0;
-		end
+			if (rdy) begin
+				$display("[Simulation Time: %0t]\tCommand %b is being written to mdio", $time, cmd);
+				$display("[Simulation Time: %0t]\tRegister data %h is read from mdio", $time, r_register_data);
+				$display("[Simulation Time: %0t]\tRegister data is read written and read correctly: %b", $time, same);
+				if (stop == 0)
+					stop <= 1;
+			end
+				else new_cmd <= 0;
+			if (stop) begin
+				$display("[Simulation Time: %0t]\tCommand %b is being written to mdio", $time, cmd);
+				$display("[Simulation Time: %0t]\tRegister data %h is read from mdio", $time, r_register_data);
+				$display("[Simulation Time: %0t]\tRegister data is read written and read correctly: %b", $time, same);
+				$display("[Simulation Time: %0t]\t ##### Simulation end #####", $time);
+				$stop;
+			end
+		end	
 	end
-	
+		
 endmodule

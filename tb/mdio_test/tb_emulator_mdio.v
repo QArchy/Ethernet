@@ -67,10 +67,12 @@ module tb_mdio_emulator(
 				if (register_16_counter == 4'b1111)
 					register_32_counter <= register_32_counter + 1;
 			end
+			if (cmd_counter >= 5'b01101 && rw)
+				register_16_counter <= 4'b1111;
 			if (cmd_counter >= 5'b01110 && rw) begin
 				mdio_out 			<= data[register_32_counter][register_16_counter];
-				register_16_counter <= register_16_counter + 1;
-				if (register_16_counter == 4'b1111)
+				register_16_counter <= register_16_counter - 1;
+				if (register_16_counter == 4'b0000)
 					register_32_counter <= register_32_counter + 1;
 			end
 			if (cmd_counter == 5'b11111) begin
