@@ -29,6 +29,8 @@ module tb_mdio(
 	
 	reg 		state;
 	initial 	state <= 0;
+	reg 		set_rdy;
+	initial 	set_rdy <= 0;
 	reg [4:0] 	cmd_counter;
 	initial 	cmd_counter <= 0;
 	
@@ -45,13 +47,18 @@ module tb_mdio(
 	
 	always @(posedge i_clk, posedge i_reset) begin /* TRANSMISSION START CONDITION (RESET OUTPUT) */
 		if (~i_reset) begin
+			if (set_rdy) begin
+				set_rdy <= 0;
+				z 		<= 0;
+				o_rdy 	<= 1;
+			end
+				else o_rdy <= 0;
 			if (i_new_cmd && state != 1)
 				state <= 1'b1;
 			if (~state) begin
 				o_data_written_flag <= 0;
 				o_data_read_flag 	<= 0;
 				o_r_register_data 	<= 0;
-				o_rdy 				<= 0;
 			end
 		end
 	end
@@ -62,8 +69,8 @@ module tb_mdio(
 				0: begin /* READ */
 					z <= (cmd_counter >= 5'b01101 /* 13 */) ? 0: 1;
 					if (cmd_counter >= 5'b10000 /* 16 */) begin
-						o_r_register_data[15:1] <= o_r_register_data[14:0];
-						o_r_register_data[0] 	<= mdio_in;
+						o_r_register_data[14:0] <= o_r_register_data[15:1];
+						o_r_register_data[15] 	<= mdio_in;
 					end
 				end
 				1: begin /* WRITE */
@@ -82,8 +89,7 @@ module tb_mdio(
 				else 
 					o_data_read_flag <= 1;
 				state 	<= 0;
-				z 		<= 0;
-				o_rdy 	<= 1;
+				set_rdy <= 1;
 			end
 			cmd_counter <= cmd_counter + 1;
 		end

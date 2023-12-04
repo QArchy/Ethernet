@@ -15,7 +15,6 @@ vmap work work
 
 vlog ../tb/mdio_test/tb_mdio_top.v
 vlog ../tb/mdio_test/tb_mdio.v
+vlog ../tb/mdio_test/tb_emulator_mdio.v
 
 vsim -voptargs=+acc work.tb_mdio_top
-
-vlog ../tb/mdio_test/tb_emulator_mdio.v

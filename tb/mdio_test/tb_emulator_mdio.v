@@ -1,18 +1,15 @@
 module tb_mdio_emulator(
 	input 				i_clk,
 	input 				i_reset,
-	input 				i_new_cmd,
-	input 		[31:0] 	i_cmd,
-	output reg			o_rdy,
-	output reg			o_data_written_flag,
-	output reg	 		o_data_read_flag,
-	output reg 	[15:0] 	o_r_register_data,
 	inout 				io_mdio
 );
-	initial o_rdy				<= 1;
-	initial o_data_written_flag	<= 0;
-	initial o_data_read_flag	<= 0;
-	initial o_r_register_data	<= 0;
+	reg [15:0] data [31:0];
+	
+	reg [4:0] register_32_counter;
+	initial register_32_counter <= 0;
+	
+	reg [3:0] register_16_counter;
+	initial register_16_counter <= 0;
 	
 	/* --------- INOUT PATH --------- */
 	reg z;
@@ -29,63 +26,61 @@ module tb_mdio_emulator(
 	
 	reg 		state;
 	initial 	state <= 0;
+	reg [31:0] 	cmd;
+	initial 	cmd <= 0;
 	reg [4:0] 	cmd_counter;
 	initial 	cmd_counter <= 0;
+	
+	reg rw;
+	initial rw <= 0;
 	
 	always @(posedge i_clk, posedge i_reset) begin /* RESET */
 		if (i_reset) begin
 			z 					<= 0;
-			o_data_written_flag <= 0;
-			o_data_read_flag 	<= 0;
-			o_r_register_data 	<= 0;
 			state 				<= 0;
+			cmd 				<= 0;
 			cmd_counter 		<= 0;
 		end
 	end
 	
-	always @(posedge i_clk, posedge i_reset) begin /* TRANSMISSION START CONDITION (RESET OUTPUT) */
-		if (~i_reset) begin
-			if (i_new_cmd && state != 1)
-				state <= 1'b1;
-			else begin
-				o_data_written_flag <= 0;
-				o_data_read_flag 	<= 0;
-				o_r_register_data 	<= 0;
-				o_rdy 				<= 0;
+	always @(posedge i_clk, posedge i_reset) begin /* TRANSMISSION START CONDITION */
+		if (~i_reset && state == 0 && register_16_counter == 0) begin
+			if (mdio_in == 0) begin
+				state 			 <= 1;
+				cmd[cmd_counter] <= mdio_in;
+				cmd_counter 	 <= cmd_counter + 1;
 			end
 		end
 	end
 	
 	always @(posedge i_clk, posedge i_reset) begin /* TRANSMISSION */
-		if (~i_reset && state) begin
-			case (i_cmd[3])
-				0: begin /* READ */
-					if (cmd_counter == 5'b01110 /* 14 */)
-						z <= 0;
-					if (cmd_counter >= 5'b10000 /* 16 */)
-						o_r_register_data <= {o_r_register_data[15:1], mdio_in};
-				end
-				1: begin /* WRITE */
-					z <= 1;
-				end
-			endcase
-			mdio_out <= i_cmd[cmd_counter];
+		if (~i_reset && state == 1) begin
+			cmd[cmd_counter] <= mdio_in;
+			cmd_counter 	 <= cmd_counter + 1;
+			if (cmd_counter == 5'b00011 /* 3 */)
+				rw <= (cmd[cmd_counter - 1]);
+			if (cmd_counter == 5'b01101 /* 13 */)
+				z <= rw ? 1: 0;
+			if (cmd_counter >= 5'b10000 && ~rw) begin
+				data[register_32_counter][register_16_counter] 	<= mdio_in;
+				register_16_counter 							<= register_16_counter + 1;
+				if (register_16_counter == 4'b1111)
+					register_32_counter <= register_32_counter + 1;
+			end
+			if (cmd_counter >= 5'b01110 && rw) begin
+				mdio_out 			<= data[register_32_counter][register_16_counter];
+				register_16_counter <= register_16_counter + 1;
+				if (register_16_counter == 4'b1111)
+					register_32_counter <= register_32_counter + 1;
+			end
+			if (cmd_counter == 5'b11111) begin
+				state 				<= 0;
+				register_16_counter <= 0;
+				z 					<= 0;
+			end
 		end
 	end
 	
-	always @(posedge i_clk, posedge i_reset) begin /* TRANSMISSION END CONDITION (SET OUTPUT) */
-		if (~i_reset && state) begin
-			if (cmd_counter == 5'b11111 /* 31 */) begin
-				if (i_cmd[3]) 
-					o_data_written_flag <= 1;
-				else 
-					o_data_read_flag <= 1;
-				state 	<= 0;
-				z 		<= 0;
-				o_rdy 	<= 1;
-			end
-			cmd_counter <= cmd_counter + 1;
-		end
-	end
+	
 	
 endmodule

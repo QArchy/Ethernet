@@ -7,7 +7,7 @@
 module tb_mdio_top(
 	inout io_mdio
 );
-	reg [15:0] data_0 	= 16'h1140;	
+	reg [15:0] data_0 	= 16'h1140;
 	reg [15:0] data_1 	= 16'h7949; 	
 	reg [15:0] data_2 	= 16'h141; 	
 	reg [15:0] data_3 	= 16'hcc2; 	
@@ -126,14 +126,11 @@ module tb_mdio_top(
 		.io_mdio(io_mdio)
 	);
 	
-	//wire data32_written_flag;
-	//
-	//tb_mdio_emulator tb_mdio_emulator_inst(
-	//	.i_clk(clk),
-	//	.i_reset(reset),
-	//	.o_data_written_flag(data32_written_flag),
-	//	.mdio_inout(mdio_inout)
-	//);
+	tb_mdio_emulator tb_mdio_emulator_inst(
+		.i_clk(clk),
+		.i_reset(reset),
+		.io_mdio(io_mdio)
+	);
 	
 	always @(posedge clk, posedge reset) begin /* RESET */
 		if (reset) begin
